@@ -553,59 +553,42 @@
         }
 
         async function startScreenSharing() {
-            showLoading('Getting screen capture...');
-            
-            try {
-                // Create peer connection if not already created
-                if (!peerConnection) {
-                    createPeerConnection();
-                }
-                
-                // Get screen stream
-                const constraints = {
-                    video: {
-                        displaySurface: 'monitor',
-                        logicalSurface: true,
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 },
-                        frameRate: { ideal: 30 }
-                    },
-                    audio: false
-                };
-                
-                // Mock for demonstration (in real app use navigator.mediaDevices.getDisplayMedia)
-                const stream = await mockGetDisplayMedia(constraints);
-                
-                // Add stream tracks to connection
-                stream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, stream);
-                });
-                
-                // Show local preview (mirrored)
-                localVideoElement.srcObject = stream;
-                localVideoElement.classList.remove('hidden');
-                localVideoElement.classList.add('mirror-effect');
-                
-                // Create offer
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                
-                // Send offer to signaling server
-                signalingSocket.send({
-                    type: 'offer',
-                    sessionId: sessionId,
-                    sdp: offer.sdp
-                });
-                
-                statusTextElement.textContent = 'Sharing your screen...';
-                
-                hideLoading();
-            } catch (error) {
-                hideLoading();
-                alert(`Error starting screen sharing: ${error.message}`);
-                console.error('Screen sharing error:', error);
-            }
+    showLoading('Getting screen capture...');
+
+    try {
+        if (!peerConnection) {
+            createPeerConnection();
         }
+
+        // Ambil stream layar asli
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+
+        stream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, stream);
+        });
+
+        localVideoElement.srcObject = stream;
+        localVideoElement.classList.remove('hidden');
+        localVideoElement.classList.add('mirror-effect');
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        signalingSocket.send({
+            type: 'offer',
+            sessionId: sessionId,
+            sdp: offer.sdp
+        });
+
+        statusTextElement.textContent = 'Sharing your screen...';
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        alert(`Error starting screen sharing: ${error.message}`);
+        console.error('Screen sharing error:', error);
+    }
+}
+
 
         function mockGetDisplayMedia(constraints) {
             return new Promise((resolve) => {
