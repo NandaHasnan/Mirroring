@@ -226,57 +226,98 @@
             }
         };
 
-        // Real WebSocket signaling
+        // Socket simulation
         class SignalingSocket {
             constructor() {
-                this.socket = new WebSocket('wss://your-signaling-server.com');
-                this.callbacks = {
-                    message: [],
-                    open: [],
-                    error: []
+                this.listeners = {
+                    message: []
                 };
-                
-                this.socket.onopen = () => {
-                    this.callbacks.open.forEach(cb => cb());
-                };
-                
-                this.socket.onmessage = (event) => {
-                    this.callbacks.message.forEach(cb => cb(event));
-                };
-                
-                this.socket.onerror = (error) => {
-                    this.callbacks.error.forEach(cb => cb(error));
-                };
+                this.isConnected = false;
             }
             
             connect() {
                 return new Promise((resolve) => {
-                    if (this.socket.readyState === WebSocket.OPEN) {
+                    setTimeout(() => {
+                        this.isConnected = true;
                         resolve();
-                    } else {
-                        this.callbacks.open.push(() => resolve());
-                    }
+                    }, 500);
                 });
             }
             
             send(data) {
-                if (this.socket.readyState === WebSocket.OPEN) {
-                    this.socket.send(JSON.stringify(data));
+                console.log('Sending:', data);
+                setTimeout(() => {
+                    // Mock response handling
+                    if (data.type === 'offer') {
+                        this.mockOfferResponse(data);
+                    } else if (data.type === 'answer') {
+                        this.mockAnswerResponse(data);
+                    } else if (data.type === 'ice-candidate') {
+                        this.mockIceCandidateResponse(data);
+                    }
+                }, 300);
+            }
+            
+            mockOfferResponse(data) {
+                // Simulate receiving answer and ICE candidates
+                setTimeout(() => {
+                    const mockAnswer = {
+                        type: 'answer',
+                        sessionId: data.sessionId,
+                        sdp: `mock-sdp-answer-${Math.random().toString(36).substr(2, 8)}`,
+                        fromRole: 'host'
+                    };
+                    this.listeners.message.forEach(cb => cb({ data: JSON.stringify(mockAnswer) }));
+                    
+                    // Simulate ICE candidates
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            const iceCandidate = {
+                                type: 'ice-candidate',
+                                sessionId: data.sessionId,
+                                candidate: {
+                                    candidate: `candidate:${Math.random().toString(36).substr(2, 20)}`,
+                                    sdpMid: '0',
+                                    sdpMLineIndex: 0
+                                }
+                            };
+                            this.listeners.message.forEach(cb => cb({ data: JSON.stringify(iceCandidate) }));
+                        }, 200 * i);
+                    }
+                }, 1000);
+            }
+            
+            mockAnswerResponse(data) {
+                // Simulate receiving ICE candidates
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const iceCandidate = {
+                            type: 'ice-candidate',
+                            sessionId: data.sessionId,
+                            candidate: {
+                                candidate: `candidate:${Math.random().toString(36).substr(2, 20)}`,
+                                sdpMid: '0',
+                                sdpMLineIndex: 0
+                            }
+                        };
+                        this.listeners.message.forEach(cb => cb({ data: JSON.stringify(iceCandidate) }));
+                    }, 200 * i);
                 }
+            }
+            
+            mockIceCandidateResponse(data) {
+                // No action needed - just confirmation
+                console.log('ICE candidate processed');
             }
             
             addEventListener(event, callback) {
                 if (event === 'message') {
-                    this.callbacks.message.push(callback);
-                } else if (event === 'open') {
-                    this.callbacks.open.push(callback);
-                } else if (event === 'error') {
-                    this.callbacks.error.push(callback);
+                    this.listeners.message.push(callback);
                 }
             }
             
             close() {
-                this.socket.close();
+                this.isConnected = false;
             }
         }
 
@@ -532,8 +573,8 @@
                     audio: false
                 };
                 
-                // Get real screen stream
-                const stream = await getDisplayMedia(constraints);
+                // Mock for demonstration (in real app use navigator.mediaDevices.getDisplayMedia)
+                const stream = await mockGetDisplayMedia(constraints);
                 
                 // Add stream tracks to connection
                 stream.getTracks().forEach(track => {
@@ -566,17 +607,55 @@
             }
         }
 
-        async function getDisplayMedia(constraints) {
-            try {
-                const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
-                stream.getVideoTracks()[0].onended = () => {
-                    stopScreenSharing();
-                };
-                return stream;
-            } catch (error) {
-                console.error('Error getting display media:', error);
-                throw error;
-            }
+        function mockGetDisplayMedia(constraints) {
+            return new Promise((resolve) => {
+                // In a real app, you would use:
+                // return navigator.mediaDevices.getDisplayMedia(constraints)
+                
+                // Mock implementation
+                setTimeout(() => {
+                    const videoTrack = {
+                        kind: 'video',
+                        getSettings: () => ({
+                            width: constraints.video.width.ideal,
+                            height: constraints.video.height.ideal,
+                            frameRate: constraints.video.frameRate.ideal
+                        }),
+                        stop: () => {}
+                    };
+                    
+                    const mockStream = {
+                        getTracks: () => [videoTrack],
+                        getVideoTracks: () => [videoTrack]
+                    };
+                    
+                    resolve(mockStream);
+                    
+                    // Mock receiving the stream in viewer
+                    setTimeout(() => {
+                        if (role === 'viewer' && peerConnection) {
+                            const videoTrack = {
+                                kind: 'video',
+                                getSettings: () => ({
+                                    width: constraints.video.width.ideal,
+                                    height: constraints.video.height.ideal,
+                                    frameRate: constraints.video.frameRate.ideal
+                                })
+                            };
+                            
+                            const mockEvent = {
+                                streams: [{
+                                    getTracks: () => [videoTrack]
+                                }]
+                            };
+                            
+                            peerConnection.ontrack({ track: videoTrack });
+                            remoteVideoElement.srcObject = mockEvent.streams[0];
+                            noStreamMessageElement.classList.add('hidden');
+                        }
+                    }, 1000);
+                }, 500);
+            });
         }
 
         function stopScreenSharing() {
@@ -608,12 +687,8 @@
             // These would normally be your ICE servers (STUN/TURN)
             const configuration = {
                 iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
-                    { 
-                        urls: 'turn:global.turn.twilio.com:3478?transport=udp',
-                        username: 'YOUR_TURN_USERNAME',
-                        credential: 'YOUR_TURN_CREDENTIAL' 
+                    {
+                        urls: 'stun:stun.l.google.com:19302'
                     }
                 ]
             };
