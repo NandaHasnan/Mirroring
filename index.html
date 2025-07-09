@@ -3,138 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phone Mirroring Portal</title>
+    <title>Phone Mirroring App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .mirror-bg {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        }
-        .mirror-screen {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            transition: all 0.3s ease;
-        }
-        .mirror-screen:hover {
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-        .phone-outline {
-            position: relative;
-            padding: 20px;
-            border-radius: 30px;
-            background: #222;
-        }
-        .phone-screen {
-            border-radius: 8px;
+        .mirror-container {
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
             overflow: hidden;
+            position: relative;
+            background-color: #f8fafc;
         }
-        .status-bar {
-            height: 24px;
-            background: rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            padding: 0 10px;
+        .phone-frame {
+            background-image: url('https://placehold.co/414x896/f8fafc/cccccc?text=Phone+Screen+Mirror&font=montserrat');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            min-height: 500px;
+            position: relative;
         }
-        .notch {
+        .loading-screen {
             position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 20px;
-            background: #222;
-            border-radius: 0 0 10px 10px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.9);
             z-index: 10;
         }
-        .url-display {
-            border-radius: 8px;
-            overflow: hidden;
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
         }
-        @media (max-width: 768px) {
-            .phone-outline {
-                padding: 10px;
-                border-radius: 20px;
-            }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            margin: 1rem 0;
+            background-color: white;
+            padding: 8px;
+            border-radius: 8px;
         }
     </style>
 </head>
-<body class="mirror-bg min-h-screen p-4 md:p-8">
-    <div class="max-w-4xl mx-auto">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Phone Mirroring Portal</h1>
-            <p class="text-gray-600 mt-2">View your phone screen remotely in real-time</p>
-        </div>
-
-        <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Setup Section -->
-            <div class="flex-1 bg-white rounded-lg p-6 shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Setup Your Mirror Session</h2>
-                
-                <div class="mb-6">
-                    <label class="block text-gray-700 mb-2">Step 1: Generate Unique URL</label>
-                    <button id="generateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors">
-                        Generate Mirroring Link
-                    </button>
-                </div>
-
-                <div id="urlContainer" class="mb-6 hidden">
-                    <label class="block text-gray-700 mb-2">Your Mirroring URL:</label>
-                    <div class="flex">
-                        <input id="mirrorUrl" type="text" class="flex-1 p-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
-                        <button id="copyBtn" class="bg-gray-200 hover:bg-gray-300 px-4 rounded-r-lg transition-colors">
-                            Copy
-                        </button>
-                    </div>
-                    <p class="text-sm text-gray-500 mt-2">Share this URL to view your phone screen remotely</p>
-                </div>
-
-                <div class="flex items-center justify-center">
-                    <img src="https://placehold.co/370x260" alt="Illustration showing smartphone connecting to web browser with arrows indicating data transfer" class="rounded-lg">
-                </div>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Phone Mirroring Portal</h1>
+            
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Generate Mirroring Session</h2>
+                <p class="text-gray-600 mb-4">Click below to create a unique mirroring URL that you can use to share your phone screen.</p>
+                <button id="generateBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition duration-200">
+                    Generate Mirroring Link
+                </button>
             </div>
 
-            <!-- Preview Section -->
-            <div class="flex-1 bg-white rounded-lg p-6 shadow-lg">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Mirror Screen Preview</h2>
-                
-                <div class="flex justify-center">
-                    <div class="phone-outline">
-                        <div class="notch"></div>
-                        <div class="phone-screen">
-                            <div class="status-bar flex justify-between text-white text-xs px-2">
-                                <span class="time">12:34</span>
-                                <div class="icons space-x-1">
-                                    <span class="inline-block">📶</span>
-                                    <span class="inline-block">🔋</span>
-                                </div>
-                            </div>
-                            <div id="mirrorView" class="bg-gray-100 flex items-center justify-center" style="height: 400px; width: 225px;">
-                                <p id="defaultDisplay" class="text-gray-500 text-center p-4">Waiting for connection...</p>
-                                <canvas id="screenCanvas" class="hidden"></canvas>
+            <div id="linkContainer" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Your Mirroring Session</h2>
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="flex-1">
+                        <p class="text-gray-600 mb-2">Share this URL with anyone to mirror your phone screen:</p>
+                        <div class="flex gap-2 mb-4">
+                            <input id="mirrorLink" type="text" readonly class="flex-1 border border-gray-300 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button id="copyBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-r-lg transition duration-200">
+                                Copy
+                            </button>
+                        </div>
+                        <div class="qr-code" id="qrCode">
+                            <img src="https://placehold.co/150x150/f8fafc/cccccc?text=QR+Code+Here" alt="QR code to scan for accessing the mirroring session" />
+                        </div>
+                    </div>
+                    <div class="flex-1 mirror-container">
+                        <div class="phone-frame" id="phoneDisplay">
+                            <div id="loadingScreen" class="loading-screen">
+                                <div class="spinner"></div>
+                                <p class="mt-4 text-gray-600">Waiting for connection...</p>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="mt-6">
-                    <div id="statusDisplay" class="text-center text-gray-500">
-                        Mirroring session not started
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">How It Works</h2>
+                <div class="grid md:grid-cols-3 gap-4">
+                    <div class="p-4 border border-gray-200 rounded-lg">
+                        <div class="text-blue-500 text-2xl font-bold mb-2">1</div>
+                        <h3 class="font-medium text-gray-800 mb-2">Generate Link</h3>
+                        <p class="text-gray-600">Click the button to create a unique mirroring URL.</p>
+                    </div>
+                    <div class="p-4 border border-gray-200 rounded-lg">
+                        <div class="text-blue-500 text-2xl font-bold mb-2">2</div>
+                        <h3 class="font-medium text-gray-800 mb-2">Open On Phone</h3>
+                        <p class="text-gray-600">Open the URL on the phone you want to mirror.</p>
+                    </div>
+                    <div class="p-4 border border-gray-200 rounded-lg">
+                        <div class="text-blue-500 text-2xl font-bold mb-2">3</div>
+                        <h3 class="font-medium text-gray-800 mb-2">Screen Share</h3>
+                        <p class="text-gray-600">Grant screen sharing permissions when prompted.</p>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Instructions -->
-        <div class="bg-white rounded-lg p-6 mt-8 shadow-lg">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">How to Use</h2>
-            <ol class="list-decimal pl-5 space-y-2 text-gray-700">
-                <li>Click "Generate Mirroring Link" to create a unique URL</li>
-                <li>Open the generated URL on your smartphone</li>
-                <li>Grant the necessary permissions when prompted</li>
-                <li>Your phone screen will appear here automatically</li>
-                <li>Share the URL with trusted people to view your screen</li>
-            </ol>
-            
-            <div class="mt-6 flex justify-center">
-                <img src="https://placehold.co/500x150" alt="Diagram showing smartphone connecting to desktop browser with security lock icons indicating secure connection" class="rounded-lg">
             </div>
         </div>
     </div>
@@ -142,154 +121,105 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const generateBtn = document.getElementById('generateBtn');
-            const urlContainer = document.getElementById('urlContainer');
-            const mirrorUrl = document.getElementById('mirrorUrl');
+            const linkContainer = document.getElementById('linkContainer');
+            const mirrorLink = document.getElementById('mirrorLink');
             const copyBtn = document.getElementById('copyBtn');
-            const statusDisplay = document.getElementById('statusDisplay');
-            const defaultDisplay = document.getElementById('defaultDisplay');
-            const screenCanvas = document.getElementById('screenCanvas');
-            const ctx = screenCanvas.getContext('2d');
-            
-            let socket;
-            let sessionId = '';
+            const phoneDisplay = document.getElementById('phoneDisplay');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const qrCode = document.getElementById('qrCode');
 
-            // Generate random session ID and URL
+            // Simulate getting current URL (in real app this would be dynamic)
+            function getCurrentURL() {
+                return window.location.href.split('?')[0];
+            }
+
+            // Generate a random session ID
+            function generateSessionId() {
+                return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            }
+
+            // Generate mirroring URL - in a real app this would connect to backend
+            function generateMirroringURL() {
+                const currentURL = getCurrentURL();
+                const sessionId = generateSessionId();
+                return `${currentURL}?session=${sessionId}`;
+            }
+
+            // Simulate WebRTC connection - in a real app this would establish actual screen sharing
+            function simulateConnection() {
+                loadingScreen.style.display = 'flex';
+                
+                // Simulate connection delay
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    phoneDisplay.style.backgroundImage = 'url("https://placehold.co/414x896/f8fafc/cccccc?text=Mirrored+Phone+Screen&font=montserrat")';
+                }, 2000);
+            }
+
+            // Handle URL parameter loading
+            function handleURLParameters() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('session');
+                
+                if (sessionId) {
+                    // This is the client device trying to mirror
+                    document.getElementById('generateBtn').style.display = 'none';
+                    document.querySelector('.how-it-works').style.display = 'none';
+                    
+                    // Show we're ready to mirror
+                    loadingScreen.innerHTML = `
+                        <div class="text-center">
+                            <h3 class="text-xl font-medium mb-2 text-gray-800">Ready to Mirror</h3>
+                            <p class="text-gray-600 mb-4">Grant screen sharing permissions when prompted</p>
+                            <button id="startMirrorBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-6 rounded-lg transition duration-200">
+                                Start Mirroring
+                            </button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('startMirrorBtn').addEventListener('click', function() {
+                        alert('In a real implementation, this would prompt for screen sharing permissions and establish WebRTC connection.');
+                        loadingScreen.style.display = 'none';
+                    });
+                }
+            }
+
+            // Initialize
+            handleURLParameters();
+
+            // Generate button click handler
             generateBtn.addEventListener('click', function() {
-                sessionId = generateSessionId();
-                const baseUrl = `${window.location.origin}${window.location.pathname}`;
-                const newUrl = `${baseUrl}?session=${sessionId}`;
+                const url = generateMirroringURL();
+                mirrorLink.value = url;
+                linkContainer.classList.remove('hidden');
                 
-                mirrorUrl.value = newUrl;
-                urlContainer.classList.remove('hidden');
+                // Update QR code - in real app would generate actual QR
+                qrCode.innerHTML = `
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}" 
+                         alt="QR code for mirroring session: ${url}" />
+                `;
                 
-                // Create WebSocket connection
-                setupWebSocket(sessionId);
-                
-                statusDisplay.textContent = `Waiting for connection to session: ${sessionId}`;
-                statusDisplay.className = 'text-center text-blue-600';
-                
-                generateBtn.disabled = true;
-                generateBtn.textContent = 'Session Active';
-                generateBtn.className = 'w-full bg-gray-500 text-white py-3 px-4 rounded-lg cursor-not-allowed';
+                // Simulate connection for demo purposes
+                simulateConnection();
             });
 
-            // Copy URL to clipboard
+            // Copy button click handler
             copyBtn.addEventListener('click', function() {
-                mirrorUrl.select();
+                mirrorLink.select();
                 document.execCommand('copy');
                 
                 // Show feedback
                 const originalText = copyBtn.textContent;
                 copyBtn.textContent = 'Copied!';
+                copyBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                copyBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                
                 setTimeout(() => {
                     copyBtn.textContent = originalText;
+                    copyBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                    copyBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
                 }, 2000);
             });
-
-            // Check for session in URL
-            function checkExistingSession() {
-                const params = new URLSearchParams(window.location.search);
-                const existingSession = params.get('session');
-                
-                if (existingSession) {
-                    sessionId = existingSession;
-                    mirrorUrl.value = window.location.href;
-                    urlContainer.classList.remove('hidden');
-                    
-                    setupWebSocket(sessionId);
-                    
-                    statusDisplay.textContent = `Connected to session: ${sessionId}`;
-                    statusDisplay.className = 'text-center text-green-600';
-                    
-                    generateBtn.disabled = true;
-                    generateBtn.textContent = 'Session Active';
-                    generateBtn.className = 'w-full bg-gray-500 text-white py-3 px-4 rounded-lg cursor-not-allowed';
-                    
-                    // In a real app, this would initiate screen sharing from the phone
-                    simulatePhoneConnection();
-                }
-            }
-            
-            // Initialize WebSocket connection
-            function setupWebSocket(session) {
-                // In a real implementation, replace with your WebSocket server URL
-                const wsUrl = `wss://yourserver.com/mirror?session=${session}`;
-                
-                // Mock WebSocket for this demo
-                console.log(`Connecting to WebSocket for session: ${session}`);
-                
-                // Simulate connection
-                setTimeout(() => {
-                    console.log('WebSocket connection established');
-                }, 1000);
-            }
-            
-            // Simulate phone connecting (for demo purposes)
-            function simulatePhoneConnection() {
-                setTimeout(() => {
-                    defaultDisplay.classList.add('hidden');
-                    screenCanvas.classList.remove('hidden');
-                    screenCanvas.width = 225;
-                    screenCanvas.height = 400;
-                    
-                    statusDisplay.textContent = 'Phone connected - Screen sharing active';
-                    statusDisplay.className = 'text-center text-green-600';
-                    
-                    // Draw demo screen (would be phone screen in real implementation)
-                    drawMockScreen();
-                    
-                    // Periodically update mock screen
-                    setInterval(drawMockScreen, 3000);
-                }, 2000);
-            }
-            
-            // Draw mock phone screen (would be real phone screen in production)
-            function drawMockScreen() {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, screenCanvas.width, screenCanvas.height);
-                
-                // Draw some elements
-                ctx.fillStyle = '#3498db';
-                ctx.font = 'bold 16px Arial';
-                ctx.fillText('Phone Screen Mirroring', 10, 30);
-                
-                ctx.fillStyle = '#2ecc71';
-                ctx.font = '14px Arial';
-                ctx.fillText('Battery: 85%', 10, 60);
-                
-                ctx.fillStyle = '#e74c3c';
-                ctx.font = '14px Arial';
-                ctx.fillText('Signal: Excellent', 10, 90);
-                
-                // Draw a random "app"
-                const apps = ['Messages', 'Browser', 'Camera', 'Settings'];
-                const randomApp = apps[Math.floor(Math.random() * apps.length)];
-                
-                ctx.fillStyle = '#9b59b6';
-                ctx.font = 'bold 18px Arial';
-                ctx.fillText(randomApp, 10, 150);
-                
-                // Draw a notification
-                ctx.fillStyle = '#f1c40f';
-                ctx.beginPath();
-                ctx.arc(200, 120, 10, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#000000';
-                ctx.font = '12px Arial';
-                ctx.fillText('1', 197, 125);
-            }
-            
-            // Generate random session ID
-            function generateSessionId() {
-                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    const r = Math.random() * 16 | 0;
-                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                    return v.toString(16);
-                });
-            }
-            
-            // Check for existing session on page load
-            checkExistingSession();
         });
     </script>
 </body>
