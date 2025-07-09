@@ -3,190 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phone Mirroring Portal</title>
+    <title>Phone Mirroring System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
-        }
-        .mirror-container {
-            position: relative;
-            overflow: hidden;
-            background-color: #000;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-        #mirror-video {
+        #remoteVideo {
             width: 100%;
             height: auto;
-            transform: scaleX(-1);
-        }
-        .connection-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 12px;
-        }
-        .controls {
-            background: rgba(0, 0, 0, 0.7);
+            background-color: #000;
             border-radius: 8px;
-            padding: 10px;
         }
-        .qr-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        .auth-modal {
+        #localVideo {
+            width: 150px;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 200;
+            bottom: 20px;
+            right: 20px;
+            border-radius: 8px;
+            z-index: 100;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        @media (max-width: 768px) {
-            .mirror-container {
-                height: 60vh;
-            }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .mirror-effect {
+            transform: scaleX(-1);
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8 max-w-6xl">
-        <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Phone Mirroring Portal</h1>
-            <p class="text-gray-600">Stream your phone screen securely to any device</p>
-        </header>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Main App -->
+        <div id="app" class="hidden">
+            <!-- Header -->
+            <header class="mb-8">
+                <h1 class="text-3xl font-bold text-center text-blue-600">Phone Mirroring System</h1>
+                <p class="text-center text-gray-600 mt-2">Real-time screen sharing with WebRTC</p>
+            </header>
 
-        <!-- Main content -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Mirroring Section -->
-            <div class="mirror-container">
-                <video id="mirror-video" autoplay playsinline></video>
-                <div id="connection-status" class="connection-status bg-red-500 text-white">
-                    Disconnected
+            <!-- Connection Status -->
+            <div id="statusBar" class="bg-white p-4 rounded-lg shadow-md mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span id="connectionStatus" class="inline-block w-3 h-3 rounded-full bg-gray-400 mr-2"></span>
+                        <span id="statusText">Disconnected</span>
+                    </div>
+                    <div id="sessionInfo" class="hidden">
+                        <span class="text-sm text-gray-500">
+                            Session ID: <span id="sessionId" class="font-mono"></span>
+                        </span>
+                    </div>
                 </div>
-                
-                <!-- QR Overlay for Mobile Connection -->
-                <div id="qr-overlay" class="qr-overlay">
-                    <div class="text-center text-white p-4">
-                        <h2 class="text-2xl font-bold mb-4">Connect Your Phone</h2>
-                        <div id="qr-code" class="mb-6 p-4 bg-white rounded-lg">
-                            <img src="https://placehold.co/200x200" alt="QR code for connecting phone, white QR pattern on dark blue background" />
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Stream Viewer -->
+                <div class="flex-1 bg-white p-4 rounded-lg shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 text-center">Screen Mirror</h2>
+                    <div id="videoContainer" class="relative">
+                        <video id="remoteVideo" autoplay playsinline></video>
+                        <video id="localVideo" autoplay playsinline muted class="hidden"></video>
+                        <div id="noStreamMessage" class="text-center py-10">
+                            <div class="loader mx-auto"></div>
+                            <p class="mt-4 text-gray-600">Waiting for stream to start...</p>
                         </div>
-                        <p class="mb-4 text-gray-300">Scan this QR code with your phone to start mirroring</p>
-                        <div class="flex items-center justify-center space-x-4">
-                            <p id="connection-url" class="bg-gray-800 text-green-400 p-3 rounded font-mono text-sm break-all"></p>
-                            <button onclick="copyConnectionUrl()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
-                                Copy
+                    </div>
+                </div>
+
+                <!-- Host Controls -->
+                <div id="hostControls" class="lg:w-1/3 bg-white p-4 rounded-lg shadow-md hidden">
+                    <h2 class="text-xl font-semibold mb-4">Host Controls</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <button id="startSharingBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
+                                Start Screen Sharing
+                            </button>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Share this URL:</label>
+                            <div class="flex mt-1">
+                                <input id="shareableUrl" type="text" readonly class="flex-1 rounded-l-md border-gray-300 shadow-sm border p-2 bg-gray-50">
+                                <button id="copyUrlBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 rounded-r transition">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="border-t pt-4">
+                            <button id="stopSharingBtn" class="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded transition">
+                                Stop Sharing
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Controls and Info Section -->
-            <div class="space-y-6">
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Controls</h2>
-                    <div class="grid grid-cols-2 gap-4">
-                        <button id="start-btn" onclick="startMirroring()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded transition">
-                            Start Mirroring
-                        </button>
-                        <button id="stop-btn" onclick="stopMirroring()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded transition disabled:opacity-50" disabled>
-                            Stop Mirroring
-                        </button>
-                        <button onclick="toggleFullscreen()" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition col-span-2">
-                            Fullscreen Mode
-                        </button>
+                <!-- Viewer Controls -->
+                <div id="viewerControls" class="lg:w-1/3 bg-white p-4 rounded-lg shadow-md hidden">
+                    <h2 class="text-xl font-semibold mb-4">Viewer Controls</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <button id="requestControlBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
+                                Request Remote Control
+                            </button>
+                        </div>
+                        <div class="border-t pt-4">
+                            <div class="flex items-center">
+                                <input type="range" id="zoomSlider" min="100" max="200" value="100" class="flex-1">
+                                <span id="zoomValue" class="ml-2 text-sm w-12 text-right">100%</span>
+                            </div>
+                            <label class="block text-xs text-gray-500 mt-1">Zoom</label>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Session Information</h2>
+        <!-- Session Chooser -->
+        <div id="sessionChooser" class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold text-center mb-6">Start or Join a Session</h2>
+            
+            <div class="space-y-4">
+                <!-- Create New Session -->
+                <div class="p-4 border rounded-lg">
+                    <h3 class="font-semibold mb-3">Create New Session</h3>
+                    <p class="text-sm text-gray-600 mb-3">Start a new mirroring session and share the URL with others.</p>
+                    <button id="createSessionBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition">
+                        Create Session
+                    </button>
+                </div>
+                
+                <!-- Join Existing Session -->
+                <div class="p-4 border rounded-lg">
+                    <h3 class="font-semibold mb-3">Join Existing Session</h3>
                     <div class="space-y-3">
                         <div>
-                            <p class="text-sm text-gray-500">Session ID:</p>
-                            <p id="session-id" class="font-mono bg-gray-100 p-2 rounded">Not connected</p>
+                            <label class="block text-sm font-medium text-gray-700">Enter Session ID:</label>
+                            <input type="text" id="sessionIdInput" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2">
                         </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Connection Status:</p>
-                            <p id="status-text" class="font-semibold text-red-600">Waiting for connection</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-500">Devices Connected:</p>
-                            <p id="device-count" class="font-semibold">0</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-md p-6">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-800">Share Session</h2>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="share-url" class="flex-1 bg-gray-100 border border-gray-300 rounded px-4 py-2" readonly>
-                        <button onclick="copyShareUrl()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition">
-                            Copy Link
+                        <button id="joinSessionBtn" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded transition">
+                            Join Session
                         </button>
                     </div>
-                    <div class="mt-4">
-                        <label class="flex items-center space-x-2">
-                            <input type="checkbox" id="require-auth" class="rounded text-blue-600">
-                            <span class="text-gray-700">Require password for viewers</span>
-                        </label>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Security Features -->
-        <div class="mt-8 bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-semibold mb-4 text-gray-800">Security Options</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Session Password (optional):</label>
-                    <input type="password" id="session-password" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        <!-- Loading Modal -->
+        <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+                <div class="text-center">
+                    <div class="loader mx-auto"></div>
+                    <p id="loadingMessage" class="mt-4">Connecting...</p>
                 </div>
-                <div>
-                    <label class="flex items-center space-x-2">
-                        <input type="checkbox" id="session-timeout" class="rounded text-blue-600" checked>
-                        <span class="text-gray-700">Auto-end session after 30 minutes of inactivity</span>
-                    </label>
-                </div>
-                <div>
-                    <label class="flex items-center space-x-2">
-                        <input type="checkbox" id="limit-devices" class="rounded text-blue-600">
-                        <span class="text-gray-700">Allow maximum 5 devices to connect</span>
-                    </label>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Authentication Modal -->
-    <div id="auth-modal" class="auth-modal hidden">
-        <div class="bg-white rounded-lg p-6 w-96">
-            <h3 class="text-xl font-bold mb-4">Enter Session Password</h3>
-            <input type="password" id="auth-password" placeholder="Password" class="w-full px-3 py-2 border border-gray-300 rounded-md mb-4">
-            <div class="flex justify-end space-x-2">
-                <button onclick="cancelAuth()" class="px-4 py-2 border border-gray-300 rounded-md">Cancel</button>
-                <button onclick="submitAuth()" class="px-4 py-2 bg-blue-600 text-white rounded-md">Submit</button>
             </div>
         </div>
     </div>
@@ -194,192 +171,529 @@
     <script>
         // Global variables
         let peerConnection;
-        let sessionId = generateSessionId();
-        let socket;
-        let signalingServerUrl = 'wss://your-signaling-server.com';
-        let connectionUrl = `${window.location.origin}/mirror/${sessionId}`;
-        let sessionActive = false;
-        let authEnabled = false;
+        let localStream;
+        let sessionId;
+        let role; // 'host' or 'viewer'
+        let signalingSocket;
+        let hostPassword;
+
+        // Fake backend simulation
+        const backend = {
+            sessions: {},
+            
+            createSession: function(sessionId, password) {
+                this.sessions[sessionId] = {
+                    password: password,
+                    hostId: null,
+                    viewers: [],
+                    offers: {},
+                    isActive: true
+                };
+                return sessionId;
+            },
+            
+            joinSession: function(sessionId, role) {
+                if (!this.sessions[sessionId]) {
+                    throw new Error('Session not found');
+                }
+                if (!this.sessions[sessionId].isActive) {
+                    throw new Error('Session has ended');
+                }
+                return true;
+            },
+            
+            endSession: function(sessionId) {
+                if (this.sessions[sessionId]) {
+                    this.sessions[sessionId].isActive = false;
+                    return true;
+                }
+                return false;
+            },
+            
+            storeOffer: function(sessionId, userId, offer) {
+                if (this.sessions[sessionId]) {
+                    this.sessions[sessionId].offers[userId] = offer;
+                    return true;
+                }
+                return false;
+            },
+            
+            getOffer: function(sessionId, userId) {
+                if (this.sessions[sessionId] && this.sessions[sessionId].offers[userId]) {
+                    return this.sessions[sessionId].offers[userId];
+                }
+                return null;
+            }
+        };
+
+        // Real WebSocket signaling
+        class SignalingSocket {
+            constructor() {
+                this.socket = new WebSocket('wss://your-signaling-server.com');
+                this.callbacks = {
+                    message: [],
+                    open: [],
+                    error: []
+                };
+                
+                this.socket.onopen = () => {
+                    this.callbacks.open.forEach(cb => cb());
+                };
+                
+                this.socket.onmessage = (event) => {
+                    this.callbacks.message.forEach(cb => cb(event));
+                };
+                
+                this.socket.onerror = (error) => {
+                    this.callbacks.error.forEach(cb => cb(error));
+                };
+            }
+            
+            connect() {
+                return new Promise((resolve) => {
+                    if (this.socket.readyState === WebSocket.OPEN) {
+                        resolve();
+                    } else {
+                        this.callbacks.open.push(() => resolve());
+                    }
+                });
+            }
+            
+            send(data) {
+                if (this.socket.readyState === WebSocket.OPEN) {
+                    this.socket.send(JSON.stringify(data));
+                }
+            }
+            
+            addEventListener(event, callback) {
+                if (event === 'message') {
+                    this.callbacks.message.push(callback);
+                } else if (event === 'open') {
+                    this.callbacks.open.push(callback);
+                } else if (event === 'error') {
+                    this.callbacks.error.push(callback);
+                }
+            }
+            
+            close() {
+                this.socket.close();
+            }
+        }
+
+        // DOM Elements
+        const appElement = document.getElementById('app');
+        const sessionChooserElement = document.getElementById('sessionChooser');
+        const createSessionBtn = document.getElementById('createSessionBtn');
+        const joinSessionBtn = document.getElementById('joinSessionBtn');
+        const sessionIdInput = document.getElementById('sessionIdInput');
+        const hostControlsElement = document.getElementById('hostControls');
+        const viewerControlsElement = document.getElementById('viewerControls');
+        const startSharingBtn = document.getElementById('startSharingBtn');
+        const stopSharingBtn = document.getElementById('stopSharingBtn');
+        const remoteVideoElement = document.getElementById('remoteVideo');
+        const localVideoElement = document.getElementById('localVideo');
+        const noStreamMessageElement = document.getElementById('noStreamMessage');
+        const shareableUrlElement = document.getElementById('shareableUrl');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        const connectionStatusElement = document.getElementById('connectionStatus');
+        const statusTextElement = document.getElementById('statusText');
+        const sessionInfoElement = document.getElementById('sessionInfo');
+        const sessionIdElement = document.getElementById('sessionId');
+        const loadingModal = document.getElementById('loadingModal');
+        const loadingMessageElement = document.getElementById('loadingMessage');
+        const requestControlBtn = document.getElementById('requestControlBtn');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValue = document.getElementById('zoomValue');
+
+        // Event Listeners
+        createSessionBtn.addEventListener('click', handleCreateSession);
+        joinSessionBtn.addEventListener('click', handleJoinSession);
+        startSharingBtn.addEventListener('click', startScreenSharing);
+        stopSharingBtn.addEventListener('click', stopScreenSharing);
+        copyUrlBtn.addEventListener('click', copyShareableUrl);
+        zoomSlider.addEventListener('input', handleZoomChange);
+        requestControlBtn.addEventListener('click', requestRemoteControl);
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('session-id').textContent = sessionId;
-            document.getElementById('connection-url').textContent = connectionUrl;
-            document.getElementById('share-url').value = connectionUrl;
+        updateConnectionStatus('disconnected');
+        hideAllControls();
 
-            // Connect to signaling server (this would be your backend)
-            connectToSignalingServer();
-        });
+        // Functions
+        function hideAllControls() {
+            hostControlsElement.classList.add('hidden');
+            viewerControlsElement.classList.add('hidden');
+        }
+
+        function updateConnectionStatus(status) {
+            connectionStatusElement.className = `inline-block w-3 h-3 rounded-full mr-2 ${
+                status === 'connected' ? 'bg-green-500' : 
+                status === 'connecting' ? 'bg-yellow-500' : 
+                'bg-gray-400'
+            }`;
+            statusTextElement.textContent = 
+                status === 'connected' ? 'Connected' : 
+                status === 'connecting' ? 'Connecting...' : 
+                'Disconnected';
+        }
+
+        function showLoading(message) {
+            loadingMessageElement.textContent = message;
+            loadingModal.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingModal.classList.add('hidden');
+        }
 
         function generateSessionId() {
-            return 'session-' + Math.random().toString(36).substr(2, 9);
+            return Math.random().toString(36).substr(2, 8).toUpperCase();
         }
 
-        function connectToSignalingServer() {
-            // In a real implementation, this would connect to your WebSocket server
-            console.log(`Connecting to signaling server for session ${sessionId}`);
-            // socket = new WebSocket(signalingServerUrl);
-            
-            // Simulate connection (in real app, use actual WebSocket events)
-            setTimeout(() => {
-                updateStatus('Connected to server', 'bg-yellow-500');
-            }, 1000);
+        function generatePassword() {
+            return Math.random().toString(36).substr(2, 6);
         }
 
-        function startMirroring() {
-            if (sessionActive) return;
+        async function handleCreateSession() {
+            showLoading('Creating new session...');
             
-            sessionActive = true;
-            updateStatus('Waiting for phone connection', 'bg-yellow-500');
-            document.getElementById('start-btn').disabled = true;
-            document.getElementById('stop-btn').disabled = false;
-            document.getElementById('qr-overlay').style.display = 'flex';
-            
-            // In a real implementation, this would negotiate WebRTC connection
-            console.log('Starting mirroring session');
-            
-            // Simulate phone connection (in real app, use actual WebRTC negotiation)
-            setTimeout(() => {
-                simulatePhoneConnection();
-            }, 2000);
-            
-            // Enable security if password is set
-            authEnabled = document.getElementById('session-password').value.length > 0;
-            if (authEnabled) {
-                connectionUrl += `?auth=${btoa(sessionId + ':' + document.getElementById('session-password').value)}`;
-                document.getElementById('connection-url').textContent = connectionUrl;
-                document.getElementById('share-url').value = connectionUrl;
+            try {
+                // Generate session ID and password
+                sessionId = generateSessionId();
+                hostPassword = generatePassword();
+                role = 'host';
+                
+                // "Connect" to signaling server
+                signalingSocket = new SignalingSocket();
+                await signalingSocket.connect();
+                
+                // Join backend session
+                backend.createSession(sessionId, hostPassword);
+                
+                // Update UI
+                appElement.classList.remove('hidden');
+                sessionChooserElement.classList.add('hidden');
+                hostControlsElement.classList.remove('hidden');
+                sessionInfoElement.classList.remove('hidden');
+                sessionIdElement.textContent = sessionId;
+                updateConnectionStatus('connected');
+                
+                // Generate shareable URL
+                const viewerUrl = `${window.location.origin}${window.location.pathname}?session=${sessionId}`;
+                shareableUrlElement.value = viewerUrl;
+                
+                // Setup signaling
+                setupSignaling();
+                
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                alert(`Error creating session: ${error.message}`);
+                console.error('Session creation error:', error);
             }
         }
 
-        function simulatePhoneConnection() {
-            updateStatus('Phone connected', 'bg-green-500');
-            document.getElementById('qr-overlay').style.display = 'none';
+        async function handleJoinSession() {
+            const inputSessionId = sessionIdInput.value.trim();
             
-            // In a real app, this would stream actual video from the phone
-            // For demo purposes, we'll just show a placeholder
-            const video = document.getElementById('mirror-video');
-            video.srcObject = null;
-            
-            // Simulate video stream (in real app, this would be the actual video track)
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    video.srcObject = stream;
-                })
-                .catch(err => {
-                    console.error('Error accessing camera:', err);
-                    // Fallback to static image
-                    video.poster = 'https://placehold.co/1920x1080?text=Phone+Screen';
-                    video.src = '';
-                });
-        }
-
-        function stopMirroring() {
-            sessionActive = false;
-            updateStatus('Disconnected', 'bg-red-500');
-            document.getElementById('start-btn').disabled = false;
-            document.getElementById('stop-btn').disabled = true;
-            
-            // Stop all tracks
-            const video = document.getElementById('mirror-video');
-            if (video.srcObject) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
+            if (!inputSessionId) {
+                alert('Please enter a session ID');
+                return;
             }
             
-            // Show QR code overlay again
-            document.getElementById('qr-overlay').style.display = 'flex';
+            showLoading(`Joining session ${inputSessionId}...`);
             
-            // In a real implementation, this would close the WebRTC connection
-            console.log('Stopping mirroring session');
+            try {
+                sessionId = inputSessionId;
+                role = 'viewer';
+                
+                // "Connect" to signaling server
+                signalingSocket = new SignalingSocket();
+                await signalingSocket.connect();
+                
+                // Join backend session
+                backend.joinSession(sessionId, role);
+                
+                // Update UI
+                appElement.classList.remove('hidden');
+                sessionChooserElement.classList.add('hidden');
+                viewerControlsElement.classList.remove('hidden');
+                sessionInfoElement.classList.remove('hidden');
+                sessionIdElement.textContent = sessionId;
+                updateConnectionStatus('connected');
+                
+                // Setup signaling
+                setupSignaling();
+                
+                // As viewer, automatically try to connect
+                createPeerConnection();
+                sendViewerReady();
+                
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                alert(`Error joining session: ${error.message}`);
+                console.error('Session join error:', error);
+            }
         }
 
-        function toggleFullscreen() {
-            const element = document.getElementById('mirror-video');
-            if (!document.fullscreenElement) {
-                if (element.requestFullscreen) {
-                    element.requestFullscreen();
-                } else if (element.webkitRequestFullscreen) {
-                    element.webkitRequestFullscreen();
+        function setupSignaling() {
+            signalingSocket.addEventListener('message', async (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    
+                    if (!message.sessionId || message.sessionId !== sessionId) {
+                        return; // Not for this session
+                    }
+                    
+                    console.log('Received message:', message);
+                    
+                    if (message.type === 'offer' && role === 'host') {
+                        // This would normally be handled differently in a real app
+                        console.log('Received offer in host mode - should not happen in this mock');
+                    } else if (message.type === 'answer' && role === 'host') {
+                        const answerDesc = new RTCSessionDescription({
+                            type: 'answer',
+                            sdp: message.sdp
+                        });
+                        await peerConnection.setRemoteDescription(answerDesc);
+                        
+                        // Update status
+                        updateConnectionStatus('connected');
+                        statusTextElement.textContent = 'Streaming to viewer';
+                    } else if (message.type === 'ice-candidate') {
+                        if (message.candidate) {
+                            try {
+                                await peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+                            } catch (e) {
+                                console.error('Error adding ICE candidate:', e);
+                            }
+                        }
+                    } else if (message.type === 'viewer-ready' && role === 'host') {
+                        // Viewer is ready to receive stream
+                        statusTextElement.textContent = 'Viewer connected. Start sharing your screen.';
+                    } else if (message.type === 'request-control') {
+                        if (role === 'host') {
+                            if (confirm('A viewer wants to control your device. Allow?')) {
+                                sendControlApproval();
+                            }
+                        } else if (role === 'viewer') {
+                            alert('Remote control approved! Implement control functionality here.');
+                            // In real app, you would enable input forwarding here
+                        }
+                    } else if (message.type === 'control-approved') {
+                        alert('Remote control approved! Implement control functionality here.');
+                        // In real app, you would enable input forwarding here
+                    }
+                } catch (error) {
+                    console.error('Error handling signaling message:', error);
                 }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
+            });
+        }
+
+        function sendViewerReady() {
+            signalingSocket.send({
+                type: 'viewer-ready',
+                sessionId: sessionId
+            });
+        }
+
+        function requestRemoteControl() {
+            signalingSocket.send({
+                type: 'request-control',
+                sessionId: sessionId
+            });
+        }
+
+        function sendControlApproval() {
+            signalingSocket.send({
+                type: 'control-approved',
+                sessionId: sessionId
+            });
+        }
+
+        async function startScreenSharing() {
+            showLoading('Getting screen capture...');
+            
+            try {
+                // Create peer connection if not already created
+                if (!peerConnection) {
+                    createPeerConnection();
                 }
+                
+                // Get screen stream
+                const constraints = {
+                    video: {
+                        displaySurface: 'monitor',
+                        logicalSurface: true,
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: false
+                };
+                
+                // Get real screen stream
+                const stream = await getDisplayMedia(constraints);
+                
+                // Add stream tracks to connection
+                stream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, stream);
+                });
+                
+                // Show local preview (mirrored)
+                localVideoElement.srcObject = stream;
+                localVideoElement.classList.remove('hidden');
+                localVideoElement.classList.add('mirror-effect');
+                
+                // Create offer
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                // Send offer to signaling server
+                signalingSocket.send({
+                    type: 'offer',
+                    sessionId: sessionId,
+                    sdp: offer.sdp
+                });
+                
+                statusTextElement.textContent = 'Sharing your screen...';
+                
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                alert(`Error starting screen sharing: ${error.message}`);
+                console.error('Screen sharing error:', error);
             }
         }
 
-        function copyConnectionUrl() {
-            navigator.clipboard.writeText(connectionUrl)
-                .then(() => {
-                    alert('Connection URL copied to clipboard!');
-                })
-                .catch(err => {
-                    console.error('Failed to copy:', err);
-                });
+        async function getDisplayMedia(constraints) {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
+                stream.getVideoTracks()[0].onended = () => {
+                    stopScreenSharing();
+                };
+                return stream;
+            } catch (error) {
+                console.error('Error getting display media:', error);
+                throw error;
+            }
         }
 
-        function copyShareUrl() {
-            const shareUrl = document.getElementById('share-url');
-            shareUrl.select();
+        function stopScreenSharing() {
+            if (localVideoElement.srcObject) {
+                const tracks = localVideoElement.srcObject.getTracks();
+                tracks.forEach(track => track.stop());
+                localVideoElement.srcObject = null;
+                localVideoElement.classList.add('hidden');
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            updateConnectionStatus('connected');
+            statusTextElement.textContent = 'Ready for new connection';
+            
+            // Inform viewer that stream has ended
+            if (role === 'host') {
+                signalingSocket.send({
+                    type: 'stream-ended',
+                    sessionId: sessionId
+                });
+            }
+        }
+
+        function createPeerConnection() {
+            // These would normally be your ICE servers (STUN/TURN)
+            const configuration = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478?transport=udp' },
+                    { 
+                        urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+                        username: 'YOUR_TURN_USERNAME',
+                        credential: 'YOUR_TURN_CREDENTIAL' 
+                    }
+                ]
+            };
+            
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            // Setup ICE candidate handler
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    signalingSocket.send({
+                        type: 'ice-candidate',
+                        sessionId: sessionId,
+                        candidate: event.candidate
+                    });
+                }
+            };
+            
+            // Setup stream handler
+            peerConnection.ontrack = event => {
+                if (event.streams && event.streams.length > 0) {
+                    remoteVideoElement.srcObject = event.streams[0];
+                    noStreamMessageElement.classList.add('hidden');
+                    updateConnectionStatus('connected');
+                    statusTextElement.textContent = 'Streaming active';
+                }
+            };
+            
+            // Connection state handling
+            peerConnection.onconnectionstatechange = () => {
+                switch (peerConnection.connectionState) {
+                    case 'connected':
+                        updateConnectionStatus('connected');
+                        break;
+                    case 'disconnected':
+                    case 'failed':
+                        updateConnectionStatus('disconnected');
+                        // Attempt to reconnect
+                        setTimeout(() => {
+                            if (role === 'viewer') {
+                                createPeerConnection();
+                                sendViewerReady();
+                            }
+                        }, 2000);
+                        break;
+                }
+            };
+        }
+
+        function copyShareableUrl() {
+            shareableUrlElement.select();
             document.execCommand('copy');
-            alert('Share URL copied to clipboard!');
-        }
-
-        function updateStatus(text, colorClass) {
-            const statusElement = document.getElementById('connection-status');
-            const statusTextElement = document.getElementById('status-text');
             
-            statusElement.textContent = text;
-            statusTextElement.textContent = text;
-            
-            // Remove all color classes
-            statusElement.className = statusElement.className.replace(/bg-\w+-\d+/, '');
-            statusTextElement.className = statusTextElement.className.replace(/text-\w+-\d+/, '');
-            
-            // Add new color class
-            statusElement.classList.add(colorClass);
-            statusTextElement.classList.add(colorClass.replace('bg-', 'text-'));
+            // Show copied feedback
+            const originalText = copyUrlBtn.textContent;
+            copyUrlBtn.textContent = 'Copied!';
+            setTimeout(() => {
+                copyUrlBtn.textContent = originalText;
+            }, 2000);
         }
 
-        // Authentication functions
-        function showAuthModal() {
-            document.getElementById('auth-modal').classList.remove('hidden');
+        function handleZoomChange(e) {
+            const value = e.target.value;
+            zoomValue.textContent = `${value}%`;
+            remoteVideoElement.style.width = `${value}%`;
         }
 
-        function hideAuthModal() {
-            document.getElementById('auth-modal').classList.add('hidden');
-        }
-
-        function cancelAuth() {
-            hideAuthModal();
-            // In real implementation, would prevent access
-        }
-
-        function submitAuth() {
-            const password = document.getElementById('auth-password').value;
-            // In real implementation, would verify against session password
-            hideAuthModal();
-            
-            // For demo, just pretend it worked
-            console.log('Authentication submitted');
-        }
-
-        // Handle URL parameters for automatic connection
-        function checkUrlParams() {
+        // URL Session Handling
+        function checkUrlForSession() {
             const urlParams = new URLSearchParams(window.location.search);
-            const authParam = urlParams.get('auth');
+            const sessionParam = urlParams.get('session');
             
-            if (authParam) {
-                // Simulate checking auth (in real app, verify with server)
-                const authData = atob(authParam).split(':');
-                if (authData.length === 2 && authData[0] === sessionId) {
-                    showAuthModal();
-                }
+            if (sessionParam) {
+                sessionIdInput.value = sessionParam;
+                sessionChooserElement.classList.add('hidden');
+                handleJoinSession();
             }
         }
+
+        // Initialize
+        checkUrlForSession();
     </script>
 </body>
 </html>
