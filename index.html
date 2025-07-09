@@ -1,42 +1,40 @@
-                            <div class="flex">
-                                <input id="generated-url" type="text" readonly 
-                                    class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-l-lg p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
-                                <button onclick="copyToClipboard()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-r-lg flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="qr-code-container" class="hidden flex justify-center mt-4">
-                            <div class="qr-code">
-                                <img id="qr-code-img" src="" alt="QR code for sharing URL" width="120" height="120">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-center">
-                        <button onclick="generateUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
-                            </svg>
-                            Generate Mirroring URL
-                        </button>
-                    </div>
-                </div>
+                ctx.font = '14px Arial';
+                ctx.fillText('Battery: 85%', 10, 60);
                 
-                <div class="bg-white rounded-xl shadow-lg p-6 mt-6">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">How It Works</h2>
-                    <ul class="space-y-3 text-gray-600">
-                        <li class="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                            <span>Click "Generate Mirroring URL" to create a unique sharing link</span>
-                        </li>
-                        <li class="flex items-start">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 
-                                
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = '14px Arial';
+                ctx.fillText('Signal: Excellent', 10, 90);
+                
+                // Draw a random "app"
+                const apps = ['Messages', 'Browser', 'Camera', 'Settings'];
+                const randomApp = apps[Math.floor(Math.random() * apps.length)];
+                
+                ctx.fillStyle = '#9b59b6';
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText(randomApp, 10, 150);
+                
+                // Draw a notification
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.arc(200, 120, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#000000';
+                ctx.font = '12px Arial';
+                ctx.fillText('1', 197, 125);
+            }
+            
+            // Generate random session ID
+            function generateSessionId() {
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+            }
+            
+            // Check for existing session on page load
+            checkExistingSession();
+        });
+    </script>
+</body>
+</html>
